@@ -57,7 +57,7 @@ print(f"Loaded {len(documents)} document pages")
 
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
-    chunk_overlap=200
+    chunk_overlap=20012
 )
 
 chunks = splitter.split_documents(documents)
