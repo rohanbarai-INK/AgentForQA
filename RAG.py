@@ -37,13 +37,19 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 docs_folder = "./Docs"
 documents = []
 
+# Loop through all files in the docs folder
 for filename in os.listdir(docs_folder):
+    # Check if the file is a PDF
     if filename.lower().endswith(".pdf"):
+        # Create the full path to the file
         file_path = os.path.join(docs_folder, filename)
+        # Initialize the PDF loader
         loader = PyPDFLoader(file_path)
+        # Load the PDF and add the pages to the documents list
         documents.extend(loader.load())
 
 # ✅ CHANGE 1: add filename explicitly to metadata
+# Add the filename to each document's metadata for reference
 for doc in documents:
     doc.metadata["filename"] = os.path.basename(doc.metadata["source"])
 
@@ -55,11 +61,13 @@ print(f"Loaded {len(documents)} document pages")
 # 3️⃣ Split Documents into Chunks
 # ==========================================================
 
+# Create a text splitter to break documents into manageable chunks
 splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=20012
+    chunk_size=1000,  # Maximum characters per chunk
+    chunk_overlap=200  # Characters to overlap between chunks
 )
 
+# Split the loaded documents into chunks
 chunks = splitter.split_documents(documents)
 print(f"Created {len(chunks)} chunks")
 
@@ -68,9 +76,10 @@ print(f"Created {len(chunks)} chunks")
 # 4️⃣ Create Embedding Model
 # ==========================================================
 
+# Initialize the embedding model to convert text to vectors
 embedding = OllamaEmbeddings(
-    model="nomic-embed-text",
-    base_url="http://localhost:11434"
+    model="nomic-embed-text",  # Embedding model name
+    base_url="http://localhost:11434"  # Ollama server URL
 )
 
 
@@ -86,6 +95,7 @@ embedding = OllamaEmbeddings(
 #     collection_name="qa_documents"
 # )
 # db.persist()
+# Load the vector store from the persisted directory
 db = Chroma(
     persist_directory="./qa_db",
     embedding_function=embedding,
@@ -99,10 +109,10 @@ print("Vector store created")
 # 6️⃣ Create Retriever
 # ==========================================================
 
+# Create a retriever to fetch relevant documents from the vector store
 retriever = db.as_retriever(
-    search_type="mmr",
-    search_kwargs={"k": 12,  "fetch_k": 60 }
-    
+    search_type="mmr",  # Use Maximal Marginal Relevance for diversity
+    search_kwargs={"k": 12, "fetch_k": 60}  # Return 12 docs, fetch 60 candidates
 )
 
 
@@ -110,10 +120,11 @@ retriever = db.as_retriever(
 # 7️⃣ Configure LLM
 # ==========================================================
 
+# Set up the language model for generating answers
 llm = OllamaLLM(
-    model="llama3.1:8b",
-    temperature=0.0,
-    base_url="http://localhost:11434"
+    model="llama3.1:8b",  # Model name
+    temperature=0.0,  # Low temperature for consistent answers
+    base_url="http://localhost:11434"  # Ollama server URL
 )
 
 
@@ -142,6 +153,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
 # 9️⃣ Combine Documents + LLM
 # ==========================================================
 
+# Create a chain that combines retrieved documents with the LLM
 qa_document_chain = create_stuff_documents_chain(
     llm=llm,
     prompt=qa_prompt
@@ -152,6 +164,7 @@ qa_document_chain = create_stuff_documents_chain(
 # 🔟 Create Retrieval Chain (Modern Replacement)
 # ==========================================================
 
+# Create the complete retrieval-augmented generation chain
 retrieval_chain = create_retrieval_chain(
     retriever=retriever,
     combine_docs_chain=qa_document_chain
@@ -162,8 +175,10 @@ retrieval_chain = create_retrieval_chain(
 # 1️⃣1️⃣ Ask Question
 # ==========================================================
 
+# Define the question to ask the system
 question = "Explain , Recommender System"
 
+# Run the retrieval chain with the question to get the answer
 response = retrieval_chain.invoke({
     "input": question
 })

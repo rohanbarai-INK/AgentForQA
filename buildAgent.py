@@ -28,7 +28,7 @@ tools = [add_numbers, subtract_numbers, multiply_numbers]
 # ===============================
 
 llm = OllamaLLM(
-    model="deepseek-r1:32b",
+    model="deepseek-r1:14b",
     temperature=0.0,
     base_url="http://localhost:11434"
 )

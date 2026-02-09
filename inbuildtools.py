@@ -8,7 +8,7 @@ from langchain_ollama import OllamaLLM
 # ===============================
 
 llm = OllamaLLM(
-    model="deepseek-r1:32b",
+    model="deepseek-r1:14b",
     temperature=0.5,
     base_url="http://localhost:11434"
 )
